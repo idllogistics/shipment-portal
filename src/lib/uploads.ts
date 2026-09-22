@@ -21,7 +21,11 @@ function extFromMime(mime: string) {
   }
 }
 
-export async function saveShipmentPhoto(trackingNumber: string, file: File) {
+async function saveShipmentFile(
+  trackingNumber: string,
+  file: File,
+  subfolder: string
+) {
   if (!ALLOWED_TYPES.has(file.type)) {
     throw new UploadError("Only JPEG, PNG, WEBP, or GIF images are allowed.");
   }
@@ -31,7 +35,7 @@ export async function saveShipmentPhoto(trackingNumber: string, file: File) {
 
   const safeTracking = trackingNumber.replace(/[^a-zA-Z0-9_-]/g, "");
   const filename = `${Date.now()}-${randomUUID()}.${extFromMime(file.type)}`;
-  const pathname = `shipments/${safeTracking}/${filename}`;
+  const pathname = `shipments/${safeTracking}/${subfolder}/${filename}`;
 
   const blob = await put(pathname, file, {
     access: "public",
@@ -39,6 +43,14 @@ export async function saveShipmentPhoto(trackingNumber: string, file: File) {
   });
 
   return blob.url;
+}
+
+export function saveShipmentPhoto(trackingNumber: string, file: File) {
+  return saveShipmentFile(trackingNumber, file, "photos");
+}
+
+export function saveShipmentSignature(trackingNumber: string, file: File) {
+  return saveShipmentFile(trackingNumber, file, "signatures");
 }
 
 export async function deleteShipmentPhoto(url: string) {

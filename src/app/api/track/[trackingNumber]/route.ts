@@ -19,9 +19,13 @@ export async function GET(
   const shipment = await prisma.shipment.findUnique({
     where: { trackingNumber: trackingNumber.toUpperCase() },
     include: {
-      photos: { orderBy: { createdAt: "desc" } },
+      photos: { where: { checkpointId: null }, orderBy: { createdAt: "desc" } },
       events: { orderBy: { createdAt: "desc" } },
       driver: true,
+      checkpoints: {
+        orderBy: { createdAt: "desc" },
+        include: { photos: true },
+      },
     },
   });
 
@@ -29,7 +33,7 @@ export async function GET(
     return NextResponse.json({ error: "Shipment not found" }, { status: 404 });
   }
 
-  const { driver, ...rest } = shipment;
+  const { driver } = shipment;
 
   let driverLocation: {
     lat: number;
@@ -54,5 +58,35 @@ export async function GET(
     };
   }
 
-  return NextResponse.json({ shipment: { ...rest, driverLocation } });
+  // Explicit whitelist for this public endpoint — declaredValue/currency and
+  // raw documents are commercial/customs paperwork, kept admin-only.
+  const publicShipment = {
+    id: shipment.id,
+    trackingNumber: shipment.trackingNumber,
+    customerName: shipment.customerName,
+    origin: shipment.origin,
+    destination: shipment.destination,
+    status: shipment.status,
+    notes: shipment.notes,
+    itemDescription: shipment.itemDescription,
+    itemQuantity: shipment.itemQuantity,
+    createdAt: shipment.createdAt,
+    updatedAt: shipment.updatedAt,
+    photos: shipment.photos,
+    events: shipment.events,
+    checkpoints: shipment.checkpoints.map((c) => ({
+      id: c.id,
+      type: c.type,
+      condition: c.condition,
+      conditionNotes: c.conditionNotes,
+      approverName: c.approverName,
+      approverRole: c.approverRole,
+      signatureUrl: c.signatureUrl,
+      photos: c.photos,
+      createdAt: c.createdAt,
+    })),
+    driverLocation,
+  };
+
+  return NextResponse.json({ shipment: publicShipment });
 }

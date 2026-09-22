@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { STATUS_LABELS } from "@/lib/tracking";
 import { formatTime } from "@/lib/format";
+import DriverCheckpointForm from "./DriverCheckpointForm";
 
 type Shipment = {
   id: string;
   trackingNumber: string;
   customerName: string;
+  origin: string | null;
   destination: string | null;
   status: string;
+  nextCheckpoint: "PICKUP" | "DELIVERY" | null;
 };
 
 type Driver = {
@@ -35,36 +38,42 @@ export default function DriverLocationSharer({
   const [lastSentAt, setLastSentAt] = useState<Date | null>(null);
   const [pingCount, setPingCount] = useState(0);
 
+  const [activeCheckpointShipmentId, setActiveCheckpointShipmentId] = useState<
+    string | null
+  >(null);
+
   const watchIdRef = useRef<number | null>(null);
   const lastPostRef = useRef(0);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch(`/api/driver/${encodeURIComponent(accessCode)}`);
-        if (cancelled) return;
-        if (!res.ok) {
-          setError(
-            res.status === 404
-              ? "This driver link isn't valid. Ask dispatch for a new one."
-              : "Something went wrong loading your info."
-          );
-          return;
-        }
-        const data = await res.json();
-        setDriver(data.driver);
-      } catch {
-        if (!cancelled) setError("Couldn't reach the server.");
-      } finally {
-        if (!cancelled) setLoading(false);
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/driver/${encodeURIComponent(accessCode)}`);
+      if (!res.ok) {
+        setError(
+          res.status === 404
+            ? "This driver link isn't valid. Ask dispatch for a new one."
+            : "Something went wrong loading your info."
+        );
+        return;
       }
+      const data = await res.json();
+      setDriver(data.driver);
+      setError(null);
+    } catch {
+      setError("Couldn't reach the server.");
+    } finally {
+      setLoading(false);
     }
-    load();
-    return () => {
-      cancelled = true;
-    };
   }, [accessCode]);
+
+  useEffect(() => {
+    // `load` is also called on-demand (after a checkpoint is submitted), so
+    // it's a stable useCallback rather than an inline effect body — the
+    // lint rule can't see that its setState calls only ever run after an
+    // await, same as the inline-fetch pattern used elsewhere in this app.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [load]);
 
   useEffect(() => {
     return () => {
@@ -212,6 +221,30 @@ export default function DriverLocationSharer({
                   {s.customerName}
                   {s.destination ? ` · ${s.destination}` : ""}
                 </p>
+
+                {s.nextCheckpoint && activeCheckpointShipmentId !== s.id && (
+                  <button
+                    onClick={() => setActiveCheckpointShipmentId(s.id)}
+                    className="mt-2 w-full rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                  >
+                    {s.nextCheckpoint === "PICKUP"
+                      ? "Record pickup"
+                      : "Record delivery"}
+                  </button>
+                )}
+
+                {s.nextCheckpoint && activeCheckpointShipmentId === s.id && (
+                  <DriverCheckpointForm
+                    accessCode={accessCode}
+                    shipmentId={s.id}
+                    type={s.nextCheckpoint}
+                    onCancel={() => setActiveCheckpointShipmentId(null)}
+                    onDone={() => {
+                      setActiveCheckpointShipmentId(null);
+                      load();
+                    }}
+                  />
+                )}
               </li>
             ))}
           </ul>

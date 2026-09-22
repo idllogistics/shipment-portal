@@ -14,9 +14,14 @@ export async function GET(
   const shipment = await prisma.shipment.findUnique({
     where: { id },
     include: {
-      photos: { orderBy: { createdAt: "desc" } },
+      photos: { where: { checkpointId: null }, orderBy: { createdAt: "desc" } },
       events: { orderBy: { createdAt: "desc" } },
       driver: true,
+      documents: { orderBy: { createdAt: "desc" } },
+      checkpoints: {
+        orderBy: { createdAt: "desc" },
+        include: { photos: true },
+      },
     },
   });
 
@@ -43,6 +48,10 @@ const updateSchema = z.object({
   destination: z.string().trim().max(200).optional().or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
   driverId: z.string().trim().nullable().optional(),
+  itemDescription: z.string().trim().max(1000).optional().or(z.literal("")),
+  itemQuantity: z.string().trim().max(200).optional().or(z.literal("")),
+  declaredValue: z.number().nonnegative().nullable().optional(),
+  declaredValueCurrency: z.string().trim().max(10).optional().or(z.literal("")),
 });
 
 export async function PATCH(
@@ -67,7 +76,18 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const { status, message, origin, destination, notes, driverId } = parsed.data;
+  const {
+    status,
+    message,
+    origin,
+    destination,
+    notes,
+    driverId,
+    itemDescription,
+    itemQuantity,
+    declaredValue,
+    declaredValueCurrency,
+  } = parsed.data;
 
   if (driverId) {
     const driver = await prisma.driver.findUnique({ where: { id: driverId } });
@@ -86,6 +106,14 @@ export async function PATCH(
         : {}),
       ...(notes !== undefined ? { notes: notes || null } : {}),
       ...(driverId !== undefined ? { driverId: driverId || null } : {}),
+      ...(itemDescription !== undefined
+        ? { itemDescription: itemDescription || null }
+        : {}),
+      ...(itemQuantity !== undefined ? { itemQuantity: itemQuantity || null } : {}),
+      ...(declaredValue !== undefined ? { declaredValue } : {}),
+      ...(declaredValueCurrency !== undefined
+        ? { declaredValueCurrency: declaredValueCurrency || null }
+        : {}),
       ...(status
         ? {
             events: {
@@ -95,9 +123,14 @@ export async function PATCH(
         : {}),
     },
     include: {
-      photos: { orderBy: { createdAt: "desc" } },
+      photos: { where: { checkpointId: null }, orderBy: { createdAt: "desc" } },
       events: { orderBy: { createdAt: "desc" } },
       driver: true,
+      documents: { orderBy: { createdAt: "desc" } },
+      checkpoints: {
+        orderBy: { createdAt: "desc" },
+        include: { photos: true },
+      },
     },
   });
 

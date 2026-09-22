@@ -15,9 +15,14 @@ export default async function AdminShipmentPage({
   const shipment = await prisma.shipment.findUnique({
     where: { id },
     include: {
-      photos: { orderBy: { createdAt: "desc" } },
+      photos: { where: { checkpointId: null }, orderBy: { createdAt: "desc" } },
       events: { orderBy: { createdAt: "desc" } },
       driver: true,
+      documents: { orderBy: { createdAt: "desc" } },
+      checkpoints: {
+        orderBy: { createdAt: "desc" },
+        include: { photos: true },
+      },
     },
   });
 

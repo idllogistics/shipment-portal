@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withCors, corsPreflight } from "@/lib/cors";
+import { nextCheckpointType } from "@/lib/checkpoints";
 
 export async function OPTIONS() {
   return corsPreflight();
@@ -16,12 +17,13 @@ export async function GET(
     where: { accessCode },
     include: {
       shipments: {
-        where: { status: { in: ["PICKED_UP", "IN_TRANSIT", "OUT_FOR_DELIVERY"] } },
+        where: { status: { notIn: ["DELIVERED", "EXCEPTION"] } },
         orderBy: { updatedAt: "desc" },
         select: {
           id: true,
           trackingNumber: true,
           customerName: true,
+          origin: true,
           destination: true,
           status: true,
         },
@@ -40,7 +42,10 @@ export async function GET(
         name: driver.name,
         active: driver.active,
         lastLocationAt: driver.lastLocationAt,
-        shipments: driver.shipments,
+        shipments: driver.shipments.map((s) => ({
+          ...s,
+          nextCheckpoint: nextCheckpointType(s.status),
+        })),
       },
     })
   );

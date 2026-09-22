@@ -16,6 +16,21 @@ enum ShipmentStatus {
   EXCEPTION
 }
 
+enum CheckpointType {
+  PICKUP
+  DELIVERY
+}
+
+enum ItemCondition {
+  GOOD
+  DAMAGED
+}
+
+enum ApproverRole {
+  SENDER
+  RECEIVER
+}
+
 model Shipment {
   id             String         @id @default(cuid())
   trackingNumber String         @unique
@@ -29,8 +44,18 @@ model Shipment {
   updatedAt      DateTime       @updatedAt
   photos         Photo[]
   events         Event[]
+  checkpoints    Checkpoint[]
+  documents      ShipmentDocument[]
   driverId       String?
   driver         Driver?        @relation(fields: [driverId], references: [id], onDelete: SetNull)
+
+  // Filled in manually or auto-extracted from an uploaded invoice/packing
+  // list (see ShipmentDocument). Editable afterward in case OCR gets
+  // something wrong.
+  itemDescription        String?
+  itemQuantity           String?
+  declaredValue          Float?
+  declaredValueCurrency  String?  @default("AED")
 }
 
 model Driver {
@@ -48,12 +73,44 @@ model Driver {
 }
 
 model Photo {
-  id         String   @id @default(cuid())
-  shipmentId String
-  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
-  url        String
-  caption    String?
-  createdAt  DateTime @default(now())
+  id           String      @id @default(cuid())
+  shipmentId   String
+  shipment     Shipment    @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  checkpointId String?
+  checkpoint   Checkpoint? @relation(fields: [checkpointId], references: [id], onDelete: SetNull)
+  url          String
+  caption      String?
+  createdAt    DateTime    @default(now())
+}
+
+model Checkpoint {
+  id             String         @id @default(cuid())
+  shipmentId     String
+  shipment       Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  type           CheckpointType
+  condition      ItemCondition
+  conditionNotes String?
+  approverName   String
+  approverRole   ApproverRole
+  signatureUrl   String
+  photos         Photo[]
+  createdAt      DateTime       @default(now())
+}
+
+model ShipmentDocument {
+  id               String   @id @default(cuid())
+  shipmentId       String
+  shipment         Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  url              String
+  filename         String
+  // What OCR extracted from this specific document, kept for provenance
+  // even if the shipment's fields get edited afterward.
+  itemDescription  String?
+  itemQuantity     String?
+  declaredValue    Float?
+  declaredValueCurrency String?
+  extractionError  String?
+  createdAt        DateTime @default(now())
 }
 
 model Event {

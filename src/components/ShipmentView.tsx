@@ -28,6 +28,18 @@ type DriverLocation = {
   updatedAt: string;
 };
 
+type Checkpoint = {
+  id: string;
+  type: "PICKUP" | "DELIVERY";
+  condition: "GOOD" | "DAMAGED";
+  conditionNotes: string | null;
+  approverName: string;
+  approverRole: "SENDER" | "RECEIVER";
+  signatureUrl: string;
+  photos: Photo[];
+  createdAt: string;
+};
+
 type Shipment = {
   id: string;
   trackingNumber: string;
@@ -36,10 +48,13 @@ type Shipment = {
   destination: string | null;
   status: string;
   notes: string | null;
+  itemDescription: string | null;
+  itemQuantity: string | null;
   createdAt: string;
   updatedAt: string;
   photos: Photo[];
   events: Event[];
+  checkpoints: Checkpoint[];
   driverLocation: DriverLocation | null;
 };
 
@@ -211,9 +226,82 @@ export default function ShipmentView({
         </div>
       </div>
 
+      {(shipment.itemDescription || shipment.itemQuantity) && (
+        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
+          <p className="text-xs text-slate-400">Items</p>
+          <p className="mt-1 font-medium">
+            {shipment.itemDescription || "—"}
+            {shipment.itemQuantity ? ` · ${shipment.itemQuantity}` : ""}
+          </p>
+        </div>
+      )}
+
       {shipment.notes && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           {shipment.notes}
+        </div>
+      )}
+
+      {shipment.checkpoints.length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold">Pickup &amp; delivery proof</h2>
+          <div className="mt-3 space-y-3">
+            {shipment.checkpoints.map((cp) => (
+              <div
+                key={cp.id}
+                className="rounded-lg border border-slate-200 bg-white p-4 text-sm"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-semibold">
+                    {cp.type === "PICKUP" ? "Picked up" : "Delivered"}
+                  </span>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      cp.condition === "GOOD"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    Condition: {cp.condition === "GOOD" ? "Good" : "Damaged"}
+                  </span>
+                </div>
+                <p className="mt-1 text-slate-500">
+                  Approved by {cp.approverName} (
+                  {cp.approverRole === "SENDER" ? "Sender" : "Receiver"}) ·{" "}
+                  {formatDateTime(cp.createdAt)}
+                </p>
+                {cp.conditionNotes && (
+                  <p className="mt-1 text-slate-600">{cp.conditionNotes}</p>
+                )}
+
+                <div className="mt-3 flex flex-wrap items-end gap-4">
+                  <div>
+                    <p className="mb-1 text-xs text-slate-400">Signature</p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={cp.signatureUrl}
+                      alt={`${cp.approverName}'s signature`}
+                      className="h-16 rounded border border-slate-200 bg-white"
+                    />
+                  </div>
+                  {cp.photos.map((photo) => (
+                    <button
+                      key={photo.id}
+                      onClick={() => setLightbox(photo)}
+                      className="h-16 w-16 overflow-hidden rounded border border-slate-200"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photo.url}
+                        alt="Item photo"
+                        className="h-full w-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
