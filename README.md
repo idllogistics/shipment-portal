@@ -73,11 +73,17 @@ customers see as a live map while their shipment is in transit.
   as stale and hidden, so a driver who goes off duty doesn't leave a frozen
   pin.
 
-## Deploying to Vercel + connecting it to harmonydwc.ae
+## Deployment
 
-This deploys the app to `track.harmonydwc.ae` as a subdomain of your
-existing WordPress site — WordPress isn't touched except for adding one
-button/link on the homepage.
+**Currently live at:** `https://shipment-portal-mgup.vercel.app` (Vercel's
+free subdomain — no custom domain purchased/connected). The steps below are
+what was already done, kept here for reference if this ever needs to be
+redeployed or handed to someone else.
+
+A custom domain (e.g. a subdomain of harmonydwc.ae) can be added later purely
+in Vercel's **Settings → Domains** — nothing else changes, since the app and
+the driver-app native app read the live URL from one place (see the "Point
+the driver app at it" step below).
 
 ### 1. Push this project to GitHub
 
@@ -135,20 +141,13 @@ need to copy/paste it.
    at the production database — or add it as a one-off command in Vercel's
    dashboard under the project's terminal/CLI if available).
 
-### 5. Point track.harmonydwc.ae at Vercel
+### 5. (Optional) Point a custom domain at Vercel
 
-1. In the Vercel project, go to **Settings → Domains** and add
-   `track.harmonydwc.ae`.
-2. Vercel will show you a CNAME record to add, typically:
-   - Type: `CNAME`
-   - Name: `track`
-   - Value: `cname.vercel-dns.com`
-3. Add that record in whatever manages your DNS for `harmonydwc.ae` (your
-   domain registrar, or Cloudflare if you use it). This does **not** affect
-   your existing `harmonydwc.ae` or `www.harmonydwc.ae` records — it only
-   creates the new `track.` subdomain.
-4. Wait for DNS to propagate (usually minutes, sometimes up to an hour) and
-   Vercel will show the domain as verified.
+Skipped for now — the free `.vercel.app` address is in use. To add one
+later: Vercel project → **Settings → Domains** → add the domain → add the
+CNAME record it shows you wherever that domain's DNS is managed. For
+harmonydwc.ae specifically, DNS is managed at [tasjeel.ae](https://tasjeel.ae)
+(the UAE's official `.ae` registry), not a typical registrar like GoDaddy.
 
 ### 6. Add a "Track Shipment" button to harmonydwc.ae
 
@@ -157,11 +156,12 @@ homepage hero, or the main menu):
 
 - **Easiest**: add a new menu item under **Appearance → Menus** with:
   - Label: `Track Shipment`
-  - URL: `https://track.harmonydwc.ae`
+  - URL: `https://shipment-portal-mgup.vercel.app`
 - **Or**, in the block editor (Spectra), add a **Button** block with the
   same URL, styled to match your existing buttons.
 
-No plugin or code changes are needed on the WordPress side.
+No plugin or code changes are needed on the WordPress side. If a custom
+domain gets connected later (step 5), just update this URL to match.
 
 ## Notes
 
