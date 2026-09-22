@@ -7,12 +7,20 @@ export default function HomePage() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <span className="text-lg font-semibold tracking-tight">ShipTrack</span>
-          <Link
-            href="/admin"
-            className="text-sm text-slate-500 hover:text-slate-900"
-          >
-            Staff login
-          </Link>
+          <div className="flex items-center gap-4 text-sm">
+            <Link
+              href="/portal/login"
+              className="text-slate-500 hover:text-slate-900"
+            >
+              Customer login
+            </Link>
+            <Link
+              href="/admin"
+              className="text-slate-500 hover:text-slate-900"
+            >
+              Staff login
+            </Link>
+          </div>
         </div>
       </header>
 

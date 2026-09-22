@@ -30,6 +30,18 @@ export default async function AdminDashboardLayout({
             >
               Drivers
             </Link>
+            <Link
+              href="/admin/customers"
+              className="text-slate-500 hover:text-slate-900"
+            >
+              Customers
+            </Link>
+            <Link
+              href="/admin/orders"
+              className="text-slate-500 hover:text-slate-900"
+            >
+              Order requests
+            </Link>
             <Link href="/" className="text-slate-500 hover:text-slate-900">
               View site
             </Link>

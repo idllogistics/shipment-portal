@@ -31,6 +31,12 @@ enum ApproverRole {
   RECEIVER
 }
 
+enum OrderRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
 model Shipment {
   id             String         @id @default(cuid())
   trackingNumber String         @unique
@@ -49,6 +55,10 @@ model Shipment {
   driverId       String?
   driver         Driver?        @relation(fields: [driverId], references: [id], onDelete: SetNull)
 
+  customerId     String?
+  customer       Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  orderRequest   OrderRequest?
+
   // Filled in manually or auto-extracted from an uploaded invoice/packing
   // list (see ShipmentDocument). Editable afterward in case OCR gets
   // something wrong.
@@ -56,6 +66,34 @@ model Shipment {
   itemQuantity           String?
   declaredValue          Float?
   declaredValueCurrency  String?  @default("AED")
+}
+
+model Customer {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  shipments      Shipment[]
+  orderRequests  OrderRequest[]
+}
+
+model OrderRequest {
+  id              String             @id @default(cuid())
+  customerId      String
+  customer        Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  origin          String
+  destination     String
+  itemDescription String?
+  itemQuantity    String?
+  notes           String?
+  status          OrderRequestStatus @default(PENDING)
+  declineReason   String?
+  shipmentId      String?            @unique
+  shipment        Shipment?          @relation(fields: [shipmentId], references: [id], onDelete: SetNull)
+  createdAt       DateTime           @default(now())
+  reviewedAt      DateTime?
 }
 
 model Driver {
