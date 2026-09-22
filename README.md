@@ -60,13 +60,18 @@ customers see as a live map while their shipment is in transit.
 - **Drivers**: go to `/admin/drivers` to add a driver — this generates a
   private link (`/driver/[accessCode]`). Send that link to the driver (e.g.
   via WhatsApp); they open it on their phone and tap **Start sharing
-  location** while on a delivery run. No account or app install needed —
-  it uses their phone browser's GPS. Assign a driver to a shipment from the
-  shipment's page; while the shipment is Picked Up, In Transit, or Out for
-  Delivery, the customer's tracking page shows the driver's live position on
-  a map (their name/phone are never exposed to the customer — only the
-  location dot). A location ping older than 30 minutes is treated as stale
-  and hidden, so a driver who goes off duty doesn't leave a frozen pin.
+  location** while on a delivery run. No account needed — it uses their
+  phone browser's GPS. This web version only tracks while the browser tab
+  stays open and the phone isn't locked; for tracking that survives a locked
+  screen or a backgrounded app, drivers should instead install the
+  [driver-app](../driver-app) native app, which uses the same access
+  code/link and the same backend routes. Assign a driver to a shipment from
+  the shipment's page; while the shipment is Picked Up, In Transit, or Out
+  for Delivery, the customer's tracking page shows the driver's live
+  position on a map (their name/phone are never exposed to the customer —
+  only the location dot). A location ping older than 30 minutes is treated
+  as stale and hidden, so a driver who goes off duty doesn't leave a frozen
+  pin.
 
 ## Deploying to Vercel + connecting it to harmonydwc.ae
 
