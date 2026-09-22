@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { withCors, corsPreflight } from "@/lib/cors";
 
 const locationSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
   accuracy: z.number().nonnegative().optional(),
 });
+
+export async function OPTIONS() {
+  return corsPreflight();
+}
 
 export async function POST(
   req: NextRequest,
@@ -16,18 +21,20 @@ export async function POST(
 
   const driver = await prisma.driver.findUnique({ where: { accessCode } });
   if (!driver) {
-    return NextResponse.json({ error: "Driver not found" }, { status: 404 });
+    return withCors(NextResponse.json({ error: "Driver not found" }, { status: 404 }));
   }
   if (!driver.active) {
-    return NextResponse.json({ error: "Driver is inactive" }, { status: 403 });
+    return withCors(NextResponse.json({ error: "Driver is inactive" }, { status: 403 }));
   }
 
   const body = await req.json().catch(() => null);
   const parsed = locationSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid location" },
-      { status: 400 }
+    return withCors(
+      NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid location" },
+        { status: 400 }
+      )
     );
   }
 
@@ -43,5 +50,5 @@ export async function POST(
     },
   });
 
-  return NextResponse.json({ ok: true });
+  return withCors(NextResponse.json({ ok: true }));
 }

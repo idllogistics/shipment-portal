@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withCors, corsPreflight } from "@/lib/cors";
+
+export async function OPTIONS() {
+  return corsPreflight();
+}
 
 export async function GET(
   _req: NextRequest,
@@ -25,16 +30,18 @@ export async function GET(
   });
 
   if (!driver) {
-    return NextResponse.json({ error: "Driver not found" }, { status: 404 });
+    return withCors(NextResponse.json({ error: "Driver not found" }, { status: 404 }));
   }
 
-  return NextResponse.json({
-    driver: {
-      id: driver.id,
-      name: driver.name,
-      active: driver.active,
-      lastLocationAt: driver.lastLocationAt,
-      shipments: driver.shipments,
-    },
-  });
+  return withCors(
+    NextResponse.json({
+      driver: {
+        id: driver.id,
+        name: driver.name,
+        active: driver.active,
+        lastLocationAt: driver.lastLocationAt,
+        shipments: driver.shipments,
+      },
+    })
+  );
 }
