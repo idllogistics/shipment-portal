@@ -17,6 +17,7 @@ export default async function AdminShipmentPage({
     include: {
       photos: { orderBy: { createdAt: "desc" } },
       events: { orderBy: { createdAt: "desc" } },
+      driver: true,
     },
   });
 

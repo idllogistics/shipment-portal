@@ -1,11 +1,19 @@
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
 
-export function generateTrackingNumber() {
+function randomCode(length: number) {
   let code = "";
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < length; i++) {
     code += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
   }
-  return `SHP-${code}`;
+  return code;
+}
+
+export function generateTrackingNumber() {
+  return `SHP-${randomCode(10)}`;
+}
+
+export function generateDriverAccessCode() {
+  return `DRV-${randomCode(16)}`;
 }
 
 export const STATUS_LABELS: Record<string, string> = {

@@ -3,7 +3,9 @@
 A shipment tracking website with a staff admin panel and a public customer
 tracking page, built for **harmonydwc.ae**. Staff upload photos and update
 status for a shipment; the customer's tracking page polls automatically and
-shows new photos live, no customer account required.
+shows new photos live, no customer account required. Drivers can also share
+their live GPS location from their phone's browser — no app install — which
+customers see as a live map while their shipment is in transit.
 
 ## Stack
 
@@ -11,7 +13,9 @@ shows new photos live, no customer account required.
 - Tailwind CSS
 - Prisma + Postgres (works with Neon, Vercel Postgres, Supabase, etc.)
 - Vercel Blob for photo storage
+- Leaflet + OpenStreetMap for the live map (no API key needed)
 - Cookie-based admin session (single shared admin password)
+- Driver location sharing via the browser Geolocation API (no app install)
 
 ## Local development
 
@@ -53,6 +57,16 @@ shows new photos live, no customer account required.
   (this generates a tracking number to give the customer), then open the
   shipment to upload photos and update its status. Each status change is
   logged to the shipment's history, which customers also see.
+- **Drivers**: go to `/admin/drivers` to add a driver — this generates a
+  private link (`/driver/[accessCode]`). Send that link to the driver (e.g.
+  via WhatsApp); they open it on their phone and tap **Start sharing
+  location** while on a delivery run. No account or app install needed —
+  it uses their phone browser's GPS. Assign a driver to a shipment from the
+  shipment's page; while the shipment is Picked Up, In Transit, or Out for
+  Delivery, the customer's tracking page shows the driver's live position on
+  a map (their name/phone are never exposed to the customer — only the
+  location dot). A location ping older than 30 minutes is treated as stale
+  and hidden, so a driver who goes off duty doesn't leave a frozen pin.
 
 ## Deploying to Vercel + connecting it to harmonydwc.ae
 
@@ -151,3 +165,14 @@ No plugin or code changes are needed on the WordPress side.
 - Deleting a shipment removes its database rows and event history but does
   not currently delete its photos from Blob storage — a minor cleanup task
   for later if storage usage matters.
+- Driver location sharing relies on the phone's browser staying open and in
+  the foreground — most mobile browsers pause `watchPosition` when the tab
+  is backgrounded or the screen locks. Fine for a driver who keeps the page
+  open during a delivery run; if always-on background tracking becomes a
+  requirement, that needs a native/PWA app with background location
+  permission instead of a browser tab.
+- The driver's access link is a long random token that acts as their login
+  (like the customer tracking number) — anyone with the link can post
+  location updates as that driver, so treat it like a password and
+  deactivate a driver (from their page in `/admin/drivers`) if their link
+  ever leaks.

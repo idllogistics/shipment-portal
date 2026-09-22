@@ -1,8 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
 import { STATUS_LABELS } from "@/lib/tracking";
+import { formatDateTime } from "@/lib/format";
+import { useOrigin } from "@/lib/useOrigin";
+
+const LiveMap = dynamic(() => import("@/components/LiveMap"), { ssr: false });
 
 type Photo = {
   id: string;
@@ -18,6 +24,16 @@ type Event = {
   createdAt: string;
 };
 
+type Driver = {
+  id: string;
+  name: string;
+  active: boolean;
+  lastLat: number | null;
+  lastLng: number | null;
+  lastAccuracy: number | null;
+  lastLocationAt: string | null;
+};
+
 type Shipment = {
   id: string;
   trackingNumber: string;
@@ -31,6 +47,8 @@ type Shipment = {
   updatedAt: string;
   photos: Photo[];
   events: Event[];
+  driverId: string | null;
+  driver: Driver | null;
 };
 
 const STATUS_OPTIONS = Object.keys(STATUS_LABELS);
@@ -49,12 +67,21 @@ export default function AdminShipmentManager({
   const [caption, setCaption] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [assigningDriver, setAssigningDriver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const trackUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/track/${shipment.trackingNumber}`
-      : `/track/${shipment.trackingNumber}`;
+  useEffect(() => {
+    fetch("/api/admin/drivers")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setDrivers(data.drivers);
+      })
+      .catch(() => {});
+  }, []);
+
+  const origin = useOrigin();
+  const trackUrl = `${origin}/track/${shipment.trackingNumber}`;
 
   async function refresh() {
     const res = await fetch(`/api/admin/shipments/${shipment.id}`);
@@ -130,6 +157,27 @@ export default function AdminShipmentManager({
         ...s,
         photos: s.photos.filter((p) => p.id !== photoId),
       }));
+    }
+  }
+
+  async function handleAssignDriver(driverId: string) {
+    setAssigningDriver(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/shipments/${shipment.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ driverId: driverId || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to assign driver");
+        return;
+      }
+      setShipment(data.shipment);
+      router.refresh();
+    } finally {
+      setAssigningDriver(false);
     }
   }
 
@@ -224,6 +272,55 @@ export default function AdminShipmentManager({
         </section>
       </div>
 
+      <section className="rounded-xl border border-slate-200 bg-white p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">Driver</h2>
+          {shipment.driver && (
+            <Link
+              href={`/admin/drivers/${shipment.driver.id}`}
+              className="text-sm text-slate-500 hover:text-slate-900"
+            >
+              View driver →
+            </Link>
+          )}
+        </div>
+        <select
+          value={shipment.driverId ?? ""}
+          onChange={(e) => handleAssignDriver(e.target.value)}
+          disabled={assigningDriver}
+          className="mt-3 w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        >
+          <option value="">Unassigned</option>
+          {drivers.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+              {d.active ? "" : " (inactive)"}
+            </option>
+          ))}
+        </select>
+
+        {shipment.driver &&
+          shipment.driver.lastLat != null &&
+          shipment.driver.lastLng != null && (
+            <div className="mt-4">
+              <p className="mb-2 text-xs text-slate-400">
+                {shipment.driver.name}&rsquo;s last location
+                {shipment.driver.lastLocationAt &&
+                  ` · ${formatDateTime(shipment.driver.lastLocationAt)}`}
+              </p>
+              <div className="overflow-hidden rounded-lg border border-slate-200">
+                <LiveMap
+                  lat={shipment.driver.lastLat}
+                  lng={shipment.driver.lastLng}
+                  accuracy={shipment.driver.lastAccuracy}
+                  label={shipment.driver.name}
+                  className="h-64 w-full"
+                />
+              </div>
+            </div>
+          )}
+      </section>
+
       <section>
         <h2 className="font-semibold">
           Photos{" "}
@@ -274,7 +371,7 @@ export default function AdminShipmentManager({
                   {ev.message && <p className="text-slate-500">{ev.message}</p>}
                 </div>
                 <span className="whitespace-nowrap text-xs text-slate-400">
-                  {new Date(ev.createdAt).toLocaleString()}
+                  {formatDateTime(ev.createdAt)}
                 </span>
               </li>
             ))}

@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { STATUS_LABELS, STATUS_ORDER } from "@/lib/tracking";
+import { formatDateTime, formatTime } from "@/lib/format";
+
+const LiveMap = dynamic(() => import("@/components/LiveMap"), { ssr: false });
 
 type Photo = {
   id: string;
@@ -17,6 +21,13 @@ type Event = {
   createdAt: string;
 };
 
+type DriverLocation = {
+  lat: number;
+  lng: number;
+  accuracy: number | null;
+  updatedAt: string;
+};
+
 type Shipment = {
   id: string;
   trackingNumber: string;
@@ -29,6 +40,7 @@ type Shipment = {
   updatedAt: string;
   photos: Photo[];
   events: Event[];
+  driverLocation: DriverLocation | null;
 };
 
 const POLL_MS = 6000;
@@ -124,7 +136,7 @@ export default function ShipmentView({
           </span>
           {lastUpdated && (
             <p className="mt-1 text-xs text-slate-400">
-              Live · updated {lastUpdated.toLocaleTimeString()}
+              Live · updated {formatTime(lastUpdated)}
             </p>
           )}
         </div>
@@ -161,6 +173,27 @@ export default function ShipmentView({
             );
           })}
         </ol>
+      )}
+
+      {shipment.driverLocation && (
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Live driver location</h2>
+            <span className="text-xs text-slate-400">
+              Updated{" "}
+              {formatTime(shipment.driverLocation.updatedAt)}
+            </span>
+          </div>
+          <div className="overflow-hidden rounded-lg border border-slate-200">
+            <LiveMap
+              lat={shipment.driverLocation.lat}
+              lng={shipment.driverLocation.lng}
+              accuracy={shipment.driverLocation.accuracy}
+              label="Your shipment"
+              className="h-72 w-full"
+            />
+          </div>
+        </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
@@ -211,7 +244,7 @@ export default function ShipmentView({
                   className="h-full w-full object-cover transition group-hover:scale-105"
                 />
                 <span className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 text-left text-[11px] text-white opacity-0 transition group-hover:opacity-100">
-                  {new Date(photo.createdAt).toLocaleString()}
+                  {formatDateTime(photo.createdAt)}
                 </span>
               </button>
             ))}
@@ -237,7 +270,7 @@ export default function ShipmentView({
                   )}
                 </div>
                 <span className="whitespace-nowrap text-xs text-slate-400">
-                  {new Date(ev.createdAt).toLocaleString()}
+                  {formatDateTime(ev.createdAt)}
                 </span>
               </li>
             ))}

@@ -21,6 +21,15 @@ export default async function AdminDashboardLayout({
             ShipTrack · Staff
           </Link>
           <div className="flex items-center gap-4 text-sm">
+            <Link href="/admin" className="text-slate-500 hover:text-slate-900">
+              Shipments
+            </Link>
+            <Link
+              href="/admin/drivers"
+              className="text-slate-500 hover:text-slate-900"
+            >
+              Drivers
+            </Link>
             <Link href="/" className="text-slate-500 hover:text-slate-900">
               View site
             </Link>

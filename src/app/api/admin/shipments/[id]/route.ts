@@ -16,6 +16,7 @@ export async function GET(
     include: {
       photos: { orderBy: { createdAt: "desc" } },
       events: { orderBy: { createdAt: "desc" } },
+      driver: true,
     },
   });
 
@@ -41,6 +42,7 @@ const updateSchema = z.object({
   origin: z.string().trim().max(200).optional().or(z.literal("")),
   destination: z.string().trim().max(200).optional().or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
+  driverId: z.string().trim().nullable().optional(),
 });
 
 export async function PATCH(
@@ -65,7 +67,14 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const { status, message, origin, destination, notes } = parsed.data;
+  const { status, message, origin, destination, notes, driverId } = parsed.data;
+
+  if (driverId) {
+    const driver = await prisma.driver.findUnique({ where: { id: driverId } });
+    if (!driver) {
+      return NextResponse.json({ error: "Driver not found" }, { status: 400 });
+    }
+  }
 
   const shipment = await prisma.shipment.update({
     where: { id },
@@ -76,6 +85,7 @@ export async function PATCH(
         ? { destination: destination || null }
         : {}),
       ...(notes !== undefined ? { notes: notes || null } : {}),
+      ...(driverId !== undefined ? { driverId: driverId || null } : {}),
       ...(status
         ? {
             events: {
@@ -87,6 +97,7 @@ export async function PATCH(
     include: {
       photos: { orderBy: { createdAt: "desc" } },
       events: { orderBy: { createdAt: "desc" } },
+      driver: true,
     },
   });
 

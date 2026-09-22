@@ -29,6 +29,22 @@ model Shipment {
   updatedAt      DateTime       @updatedAt
   photos         Photo[]
   events         Event[]
+  driverId       String?
+  driver         Driver?        @relation(fields: [driverId], references: [id], onDelete: SetNull)
+}
+
+model Driver {
+  id             String    @id @default(cuid())
+  name           String
+  phone          String?
+  accessCode     String    @unique
+  active         Boolean   @default(true)
+  lastLat        Float?
+  lastLng        Float?
+  lastAccuracy   Float?
+  lastLocationAt DateTime?
+  createdAt      DateTime  @default(now())
+  shipments      Shipment[]
 }
 
 model Photo {
