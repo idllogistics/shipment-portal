@@ -7,15 +7,24 @@ shows new photos live, no customer account required. Drivers can also share
 their live GPS location from their phone's browser — no app install — which
 customers see as a live map while their shipment is in transit.
 
+Status now advances **automatically**: the driver records pickup and
+delivery (photo + item condition + the sender's/receiver's signature) from
+their phone link, and that alone moves the shipment through its stages — no
+admin login needed for the normal happy path. Admin login is only for
+creating shipments, assigning drivers, and overriding/exceptions. Staff can
+also upload an invoice/packing list per shipment, which Claude reads to
+auto-fill the item description, quantity, and declared value.
+
 ## Stack
 
 - Next.js (App Router, TypeScript)
 - Tailwind CSS
 - Prisma + Postgres (works with Neon, Vercel Postgres, Supabase, etc.)
-- Vercel Blob for photo storage
+- Vercel Blob for photo/signature/document storage
 - Leaflet + OpenStreetMap for the live map (no API key needed)
 - Cookie-based admin session (single shared admin password)
 - Driver location sharing via the browser Geolocation API (no app install)
+- Claude (Anthropic API) for reading uploaded invoices/packing lists
 
 ## Local development
 
@@ -34,29 +43,37 @@ customers see as a live map while their shipment is in transit.
 
 4. Set your own `ADMIN_PASSWORD` and `SESSION_SECRET` in `.env`.
 
-5. Create the database tables:
+5. (Optional) Get an API key from [console.anthropic.com](https://console.anthropic.com)
+   and put it in `.env` as `ANTHROPIC_API_KEY` — this powers the
+   invoice/packing-list auto-fill. Without it, document upload still works,
+   it just skips reading the document (fields stay blank until typed in
+   manually).
+
+6. Create the database tables:
 
    ```bash
    npx prisma migrate dev --name init
    ```
 
-6. Run the dev server:
+7. Run the dev server:
 
    ```bash
    npm run dev
    ```
 
-7. Open [http://localhost:3000](http://localhost:3000).
+8. Open [http://localhost:3000](http://localhost:3000).
 
 ## How it works
 
 - **Customers**: go to the home page, enter their tracking number, and land
   on `/track/[trackingNumber]` — a live-updating page (polls every 6s) that
-  shows shipment status, a status timeline, and a photo gallery.
+  shows shipment status, a status timeline, a photo gallery, and pickup/
+  delivery proof (condition, signature, photos) once the driver records them.
 - **Staff**: go to `/admin`, log in with `ADMIN_PASSWORD`, create a shipment
-  (this generates a tracking number to give the customer), then open the
-  shipment to upload photos and update its status. Each status change is
-  logged to the shipment's history, which customers also see.
+  (this generates a tracking number to give the customer). Assign a driver,
+  optionally upload an invoice/packing list to auto-fill item details, and
+  the shipment's status now takes care of itself as the driver works through
+  it — the manual status dropdown is still there for overrides.
 - **Drivers**: go to `/admin/drivers` to add a driver — this generates a
   private link (`/driver/[accessCode]`). Send that link to the driver (e.g.
   via WhatsApp); they open it on their phone and tap **Start sharing
@@ -71,7 +88,10 @@ customers see as a live map while their shipment is in transit.
   position on a map (their name/phone are never exposed to the customer —
   only the location dot). A location ping older than 30 minutes is treated
   as stale and hidden, so a driver who goes off duty doesn't leave a frozen
-  pin.
+  pin. On the same page, their assigned shipments list a **Record pickup**
+  or **Record delivery** button (whichever applies) — tapping it opens a
+  form for item condition, a photo, and a signature from whoever's handing
+  off or receiving the shipment. Submitting it is what advances the status.
 
 ## Deployment
 
@@ -124,6 +144,9 @@ need to copy/paste it.
    - `SESSION_SECRET` — any long random string (e.g. generate one at
      [1password.com/password-generator](https://1password.com/password-generator)
      or run `openssl rand -hex 32`)
+   - `ANTHROPIC_API_KEY` — optional, from [console.anthropic.com](https://console.anthropic.com).
+     Powers invoice/packing-list auto-fill; skip it and that feature just
+     no-ops (document upload still works either way).
 3. Click **Deploy**.
 4. Once deployed, go to the project's **Storage** tab → **Create Database**
    → **Blob** → connect it to this project. This automatically adds
@@ -181,3 +204,12 @@ domain gets connected later (step 5), just update this URL to match.
   location updates as that driver, so treat it like a password and
   deactivate a driver (from their page in `/admin/drivers`) if their link
   ever leaks.
+- Any Prisma schema change needs `package.json`'s `postinstall: "prisma
+  generate"` to actually take effect on Vercel — Vercel caches
+  `node_modules` between builds, so without it the generated Prisma Client
+  can silently stay stale after a schema change and break the build. Don't
+  remove that script.
+- The invoice/packing-list OCR (`src/lib/ocr.ts`) calls Claude with the
+  document as an image or PDF and asks for a small JSON object back — it's
+  a best-effort read, not guaranteed accurate, which is why the extracted
+  fields are editable on the shipment page rather than locked in.
