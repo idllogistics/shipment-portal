@@ -14,6 +14,7 @@ enum ShipmentStatus {
   OUT_FOR_DELIVERY
   DELIVERED
   EXCEPTION
+  CANCELLED
 }
 
 enum CheckpointType {
@@ -35,6 +36,12 @@ enum OrderRequestStatus {
   PENDING
   APPROVED
   DECLINED
+  CANCELLED
+}
+
+enum CancelledBy {
+  CUSTOMER
+  ADMIN
 }
 
 model Shipment {
@@ -59,6 +66,10 @@ model Shipment {
   customer       Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
   orderRequest   OrderRequest?
 
+  cancelReason   String?
+  cancelledBy    CancelledBy?
+  cancelledAt    DateTime?
+
   // Filled in manually or auto-extracted from an uploaded invoice/packing
   // list (see ShipmentDocument). Editable afterward in case OCR gets
   // something wrong.
@@ -77,6 +88,8 @@ model Customer {
   createdAt    DateTime @default(now())
   shipments      Shipment[]
   orderRequests  OrderRequest[]
+  passwordResetRequests PasswordResetRequest[]
+  passwordResetTokens   PasswordResetToken[]
 }
 
 model OrderRequest {
@@ -90,6 +103,7 @@ model OrderRequest {
   notes           String?
   status          OrderRequestStatus @default(PENDING)
   declineReason   String?
+  cancelReason    String?
   shipmentId      String?            @unique
   shipment        Shipment?          @relation(fields: [shipmentId], references: [id], onDelete: SetNull)
   createdAt       DateTime           @default(now())
@@ -158,4 +172,24 @@ model Event {
   status     ShipmentStatus
   message    String?
   createdAt  DateTime @default(now())
+}
+
+// A customer clicked "forgot password" — a signal for staff to issue a link.
+model PasswordResetRequest {
+  id         String    @id @default(cuid())
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+}
+
+// One-time reset link issued by staff. Only the hash of the token is stored.
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
 }

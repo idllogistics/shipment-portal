@@ -93,6 +93,25 @@ auto-fill the item description, quantity, and declared value.
   form for item condition, a photo, and a signature from whoever's handing
   off or receiving the shipment. Submitting it is what advances the status.
 
+- **Customer portal** (`/portal`): staff create customer accounts at
+  `/admin/customers` (temporary password shown once). Customers log in, see
+  their shipments, and request new orders, which staff approve or decline at
+  `/admin/orders`.
+- **Cancelling & rejecting** — a reason is always required and is shown to
+  the other side. Staff *decline* pending requests and can *cancel* any
+  shipment that isn't delivered (from its admin page). Customers can cancel a
+  request still awaiting review, or a shipment that hasn't been picked up
+  yet; after pickup they contact staff. Cancelled shipments show a banner
+  and the reason on the tracking page. Choosing a new status on a cancelled
+  shipment reinstates it.
+- **Forgot / change password** — customers use "Forgot password?" on the
+  login page, which flags their account for staff (there's no email service
+  wired up). Staff open the customer's page, click **Generate reset link**,
+  and send the one-time link (valid 24 hours) to them; they choose their own
+  new password. Logged-in customers can also change their password at
+  `/portal/password`. To make reset emails automatic later, an email
+  provider (e.g. Resend) would need to be added.
+
 ## Deployment
 
 **Currently live at:** `https://shipment-portal-mgup.vercel.app` (Vercel's

@@ -23,6 +23,7 @@ export const STATUS_LABELS: Record<string, string> = {
   OUT_FOR_DELIVERY: "Out for Delivery",
   DELIVERED: "Delivered",
   EXCEPTION: "Exception",
+  CANCELLED: "Cancelled",
 };
 
 export const STATUS_ORDER = [

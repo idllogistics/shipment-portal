@@ -23,6 +23,9 @@ export default async function CustomerDashboardLayout({
             ShipTrack · {customer.name}
           </Link>
           <div className="flex items-center gap-4 text-sm">
+            <Link href="/portal/password" className="text-slate-500 hover:text-slate-900">
+              Password
+            </Link>
             <Link href="/" className="text-slate-500 hover:text-slate-900">
               View site
             </Link>

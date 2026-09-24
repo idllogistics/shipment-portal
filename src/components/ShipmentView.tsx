@@ -48,6 +48,8 @@ type Shipment = {
   destination: string | null;
   status: string;
   notes: string | null;
+  cancelReason: string | null;
+  cancelledBy: "CUSTOMER" | "ADMIN" | null;
   itemDescription: string | null;
   itemQuantity: string | null;
   createdAt: string;
@@ -126,7 +128,8 @@ export default function ShipmentView({
   const statusIndex = STATUS_ORDER.indexOf(
     shipment.status as (typeof STATUS_ORDER)[number]
   );
-  const isException = shipment.status === "EXCEPTION";
+  const isCancelled = shipment.status === "CANCELLED";
+  const isException = shipment.status === "EXCEPTION" || isCancelled;
 
   return (
     <div className="space-y-8">
@@ -156,6 +159,16 @@ export default function ShipmentView({
           )}
         </div>
       </div>
+
+      {isCancelled && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p className="font-semibold">
+            This shipment was cancelled by{" "}
+            {shipment.cancelledBy === "CUSTOMER" ? "the customer" : "our team"}.
+          </p>
+          {shipment.cancelReason && <p className="mt-1">Reason: {shipment.cancelReason}</p>}
+        </div>
+      )}
 
       {!isException && (
         <ol className="flex items-center">

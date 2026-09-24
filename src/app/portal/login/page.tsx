@@ -76,6 +76,12 @@ export default function CustomerLoginPage() {
             />
           </label>
 
+          <div className="mt-2 text-right">
+            <Link href="/portal/forgot" className="text-xs text-slate-500 hover:text-slate-900">
+              Forgot password?
+            </Link>
+          </div>
+
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 
           <button

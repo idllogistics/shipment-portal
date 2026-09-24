@@ -22,6 +22,7 @@ export async function GET(
       createdAt: true,
       shipments: { orderBy: { updatedAt: "desc" } },
       orderRequests: { orderBy: { createdAt: "desc" } },
+      passwordResetRequests: { where: { resolvedAt: null }, select: { createdAt: true } },
     },
   });
 
@@ -65,6 +66,13 @@ export async function PATCH(
   if (parsed.data.resetPassword) {
     tempPassword = generateTempPassword();
     data.passwordHash = await hashPassword(tempPassword);
+  }
+
+  if (parsed.data.resetPassword) {
+    await prisma.passwordResetRequest.updateMany({
+      where: { customerId: id, resolvedAt: null },
+      data: { resolvedAt: new Date() },
+    });
   }
 
   const updated = await prisma.customer.update({

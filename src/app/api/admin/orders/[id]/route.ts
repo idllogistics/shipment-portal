@@ -4,10 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/adminGuard";
 import { generateTrackingNumber } from "@/lib/tracking";
 
-const updateSchema = z.object({
-  action: z.enum(["APPROVE", "DECLINE"]),
-  declineReason: z.string().trim().max(500).optional().or(z.literal("")),
-});
+const updateSchema = z
+  .object({
+    action: z.enum(["APPROVE", "DECLINE"]),
+    declineReason: z.string().trim().max(500).optional().or(z.literal("")),
+  })
+  .refine((d) => d.action !== "DECLINE" || !!d.declineReason, {
+    message: "A reason is required when declining a request",
+    path: ["declineReason"],
+  });
 
 export async function PATCH(
   req: NextRequest,
@@ -45,7 +50,7 @@ export async function PATCH(
       where: { id },
       data: {
         status: "DECLINED",
-        declineReason: parsed.data.declineReason || null,
+        declineReason: parsed.data.declineReason,
         reviewedAt: new Date(),
       },
     });

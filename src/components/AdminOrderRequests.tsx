@@ -12,8 +12,9 @@ type OrderRequest = {
   itemDescription: string | null;
   itemQuantity: string | null;
   notes: string | null;
-  status: "PENDING" | "APPROVED" | "DECLINED";
+  status: "PENDING" | "APPROVED" | "DECLINED" | "CANCELLED";
   declineReason: string | null;
+  cancelReason: string | null;
   shipmentId: string | null;
   createdAt: string;
   customer: { id: string; name: string; email: string };
@@ -28,6 +29,8 @@ export default function AdminOrderRequests({
   const [requests, setRequests] = useState(initialOrderRequests);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [decliningId, setDecliningId] = useState<string | null>(null);
+  const [declineReason, setDeclineReason] = useState("");
 
   async function handleApprove(id: string) {
     setBusyId(id);
@@ -53,7 +56,10 @@ export default function AdminOrderRequests({
   }
 
   async function handleDecline(id: string) {
-    const declineReason = prompt("Reason for declining (optional):") ?? "";
+    if (!declineReason.trim()) {
+      setError("Please enter a reason for declining.");
+      return;
+    }
     setBusyId(id);
     setError(null);
     try {
@@ -70,6 +76,8 @@ export default function AdminOrderRequests({
       setRequests((rs) =>
         rs.map((r) => (r.id === id ? { ...r, ...data.orderRequest } : r))
       );
+      setDecliningId(null);
+      setDeclineReason("");
       router.refresh();
     } finally {
       setBusyId(null);
@@ -108,9 +116,9 @@ export default function AdminOrderRequests({
               className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                 r.status === "APPROVED"
                   ? "bg-emerald-100 text-emerald-700"
-                  : r.status === "DECLINED"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-amber-100 text-amber-700"
+                  : r.status === "PENDING"
+                  ? "bg-amber-100 text-amber-700"
+                  : "bg-red-100 text-red-700"
               }`}
             >
               {r.status}
@@ -138,11 +146,36 @@ export default function AdminOrderRequests({
                 Approve
               </button>
               <button
-                onClick={() => handleDecline(r.id)}
+                onClick={() => {
+                  setDecliningId(decliningId === r.id ? null : r.id);
+                  setDeclineReason("");
+                  setError(null);
+                }}
                 disabled={busyId === r.id}
                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600 disabled:opacity-50"
               >
                 Decline
+              </button>
+            </div>
+          )}
+
+          {r.status === "PENDING" && decliningId === r.id && (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
+              <label className="block text-sm font-medium text-red-800">
+                Reason for declining (shown to the customer)
+              </label>
+              <textarea
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                rows={2}
+                className="mt-1 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm"
+              />
+              <button
+                onClick={() => handleDecline(r.id)}
+                disabled={busyId === r.id}
+                className="mt-2 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+              >
+                Confirm decline
               </button>
             </div>
           )}
@@ -156,7 +189,12 @@ export default function AdminOrderRequests({
             </Link>
           )}
           {r.status === "DECLINED" && r.declineReason && (
-            <p className="mt-2 text-red-600">Reason: {r.declineReason}</p>
+            <p className="mt-2 text-red-600">Declined: {r.declineReason}</p>
+          )}
+          {r.status === "CANCELLED" && (
+            <p className="mt-2 text-red-600">
+              Cancelled by customer{r.cancelReason ? ": " + r.cancelReason : ""}
+            </p>
           )}
         </div>
       ))}

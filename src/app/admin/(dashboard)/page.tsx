@@ -58,7 +58,7 @@ export default async function AdminHomePage() {
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        s.status === "EXCEPTION"
+                        s.status === "EXCEPTION" || s.status === "CANCELLED"
                           ? "bg-red-100 text-red-700"
                           : s.status === "DELIVERED"
                           ? "bg-emerald-100 text-emerald-700"

@@ -7,7 +7,10 @@ export const dynamic = "force-dynamic";
 export default async function AdminCustomersPage() {
   const customers = await prisma.customer.findMany({
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { shipments: true, orderRequests: true } } },
+    include: {
+      _count: { select: { shipments: true, orderRequests: true } },
+      passwordResetRequests: { where: { resolvedAt: null }, select: { id: true } },
+    },
   });
 
   return (
@@ -53,6 +56,11 @@ export default async function AdminCustomersPage() {
                     >
                       {c.name}
                     </Link>
+                    {c.passwordResetRequests.length > 0 && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                        Password reset requested
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-slate-500">{c.email}</td>
                   <td className="px-4 py-3">

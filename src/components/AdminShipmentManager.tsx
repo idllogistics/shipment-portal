@@ -67,6 +67,8 @@ type Shipment = {
   destination: string | null;
   status: string;
   notes: string | null;
+  cancelReason: string | null;
+  cancelledBy: "CUSTOMER" | "ADMIN" | null;
   itemDescription: string | null;
   itemQuantity: string | null;
   declaredValue: number | null;
@@ -81,7 +83,8 @@ type Shipment = {
   driver: Driver | null;
 };
 
-const STATUS_OPTIONS = Object.keys(STATUS_LABELS);
+// Cancelling goes through its own action so a reason is always recorded.
+const STATUS_OPTIONS = Object.keys(STATUS_LABELS).filter((s) => s !== "CANCELLED");
 
 export default function AdminShipmentManager({
   initialShipment,
@@ -90,7 +93,12 @@ export default function AdminShipmentManager({
 }) {
   const router = useRouter();
   const [shipment, setShipment] = useState(initialShipment);
-  const [status, setStatus] = useState(shipment.status);
+  const [status, setStatus] = useState(
+    shipment.status === "CANCELLED" ? "PENDING" : shipment.status
+  );
+  const [showCancel, setShowCancel] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -299,6 +307,32 @@ export default function AdminShipmentManager({
     }
   }
 
+  async function handleCancel() {
+    if (!cancelReason.trim()) {
+      setError("Please enter a reason for cancelling.");
+      return;
+    }
+    setCancelling(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/shipments/${shipment.id}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: cancelReason }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to cancel");
+        return;
+      }
+      setShowCancel(false);
+      setCancelReason("");
+      await refresh();
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   function handleCopyLink() {
     navigator.clipboard.writeText(trackUrl).then(() => {
       setCopied(true);
@@ -329,6 +363,58 @@ export default function AdminShipmentManager({
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      {shipment.status === "CANCELLED" && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p className="font-semibold">
+            Cancelled by {shipment.cancelledBy === "CUSTOMER" ? "the customer" : "staff"}
+          </p>
+          {shipment.cancelReason && <p className="mt-1">Reason: {shipment.cancelReason}</p>}
+          <p className="mt-1 text-xs text-red-600">
+            Choosing a new status below reinstates this shipment.
+          </p>
+        </div>
+      )}
+
+      {shipment.status !== "CANCELLED" && shipment.status !== "DELIVERED" && (
+        <div>
+          {!showCancel ? (
+            <button
+              onClick={() => setShowCancel(true)}
+              className="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+            >
+              Cancel shipment
+            </button>
+          ) : (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <label className="block text-sm font-medium text-red-800">
+                Reason for cancelling (shown to the customer)
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows={2}
+                className="mt-1 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm"
+              />
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                  className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  {cancelling ? "Cancelling…" : "Confirm cancel"}
+                </button>
+                <button
+                  onClick={() => setShowCancel(false)}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600"
+                >
+                  Keep shipment
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

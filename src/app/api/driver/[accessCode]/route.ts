@@ -17,7 +17,7 @@ export async function GET(
     where: { accessCode },
     include: {
       shipments: {
-        where: { status: { notIn: ["DELIVERED", "EXCEPTION"] } },
+        where: { status: { notIn: ["DELIVERED", "EXCEPTION", "CANCELLED"] } },
         orderBy: { updatedAt: "desc" },
         select: {
           id: true,

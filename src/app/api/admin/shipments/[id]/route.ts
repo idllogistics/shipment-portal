@@ -100,6 +100,9 @@ export async function PATCH(
     where: { id },
     data: {
       ...(status ? { status } : {}),
+      ...(status && existing.status === "CANCELLED"
+        ? { cancelReason: null, cancelledBy: null, cancelledAt: null }
+        : {}),
       ...(origin !== undefined ? { origin: origin || null } : {}),
       ...(destination !== undefined
         ? { destination: destination || null }

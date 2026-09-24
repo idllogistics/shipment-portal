@@ -16,6 +16,7 @@ export async function GET() {
         origin: true,
         destination: true,
         status: true,
+        cancelReason: true,
         createdAt: true,
         updatedAt: true,
       },

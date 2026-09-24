@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { STATUS_LABELS } from "@/lib/tracking";
 import { formatDateTime } from "@/lib/format";
+import { useOrigin } from "@/lib/useOrigin";
 
 type Shipment = {
   id: string;
@@ -16,7 +17,7 @@ type OrderRequest = {
   id: string;
   origin: string;
   destination: string;
-  status: "PENDING" | "APPROVED" | "DECLINED";
+  status: "PENDING" | "APPROVED" | "DECLINED" | "CANCELLED";
   createdAt: string;
 };
 
@@ -28,6 +29,7 @@ type Customer = {
   createdAt: string;
   shipments: Shipment[];
   orderRequests: OrderRequest[];
+  passwordResetRequests: { createdAt: string }[];
 };
 
 export default function AdminCustomerManager({
@@ -40,6 +42,35 @@ export default function AdminCustomerManager({
   const [updating, setUpdating] = useState(false);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const origin = useOrigin();
+  const resetLink = resetToken ? `${origin}/portal/reset?token=${resetToken}` : null;
+
+  async function generateResetLink() {
+    setUpdating(true);
+    try {
+      const res = await fetch(`/api/admin/customers/${customer.id}/reset-link`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResetToken(data.token);
+        setCustomer((c) => ({ ...c, passwordResetRequests: [] }));
+        router.refresh();
+      }
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  function copyResetLink() {
+    if (!resetLink) return;
+    navigator.clipboard.writeText(resetLink).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 1500);
+    });
+  }
 
   async function toggleActive() {
     setUpdating(true);
@@ -69,7 +100,10 @@ export default function AdminCustomerManager({
         body: JSON.stringify({ resetPassword: true }),
       });
       const data = await res.json();
-      if (res.ok) setTempPassword(data.tempPassword);
+      if (res.ok) {
+        setTempPassword(data.tempPassword);
+        setCustomer((c) => ({ ...c, passwordResetRequests: [] }));
+      }
     } finally {
       setUpdating(false);
     }
@@ -116,17 +150,49 @@ export default function AdminCustomerManager({
 
       <section className="rounded-xl border border-slate-200 bg-white p-6">
         <h2 className="font-semibold">Password</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Passwords aren&rsquo;t stored in readable form — reset it to
-          generate a new temporary one to share with {customer.name}.
+        {customer.passwordResetRequests.length > 0 && (
+          <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {customer.name} asked to reset their password (
+            {formatDateTime(customer.passwordResetRequests[0].createdAt)}). Generate
+            a reset link below and send it to them.
+          </div>
+        )}
+        <p className="mt-2 text-sm text-slate-500">
+          Passwords aren&rsquo;t stored in readable form. Send {customer.name} a
+          one-time link to choose their own new password (valid 24 hours), or
+          generate a temporary password instead.
         </p>
-        <button
-          onClick={resetPassword}
-          disabled={updating}
-          className="mt-3 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50 disabled:opacity-50"
-        >
-          Reset password
-        </button>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            onClick={generateResetLink}
+            disabled={updating}
+            className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+          >
+            Generate reset link
+          </button>
+          <button
+            onClick={resetPassword}
+            disabled={updating}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50 disabled:opacity-50"
+          >
+            Set temporary password
+          </button>
+        </div>
+
+        {resetLink && (
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm text-amber-800">
+              Reset link (shown once — send it to {customer.name} now):
+            </p>
+            <p className="mt-1 break-all font-mono text-xs">{resetLink}</p>
+            <button
+              onClick={copyResetLink}
+              className="mt-2 rounded-lg border border-amber-300 bg-white px-3 py-1 text-xs hover:bg-amber-100"
+            >
+              {linkCopied ? "Copied!" : "Copy link"}
+            </button>
+          </div>
+        )}
 
         {tempPassword && (
           <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">

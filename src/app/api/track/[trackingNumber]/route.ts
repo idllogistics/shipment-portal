@@ -68,6 +68,8 @@ export async function GET(
     destination: shipment.destination,
     status: shipment.status,
     notes: shipment.notes,
+    cancelReason: shipment.cancelReason,
+    cancelledBy: shipment.cancelledBy,
     itemDescription: shipment.itemDescription,
     itemQuantity: shipment.itemQuantity,
     createdAt: shipment.createdAt,

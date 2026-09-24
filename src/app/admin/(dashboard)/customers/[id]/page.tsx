@@ -22,6 +22,7 @@ export default async function AdminCustomerPage({
       createdAt: true,
       shipments: { orderBy: { updatedAt: "desc" } },
       orderRequests: { orderBy: { createdAt: "desc" } },
+      passwordResetRequests: { where: { resolvedAt: null }, select: { createdAt: true } },
     },
   });
 
