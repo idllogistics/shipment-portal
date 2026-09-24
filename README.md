@@ -93,6 +93,11 @@ auto-fill the item description, quantity, and declared value.
   form for item condition, a photo, and a signature from whoever's handing
   off or receiving the shipment. Submitting it is what advances the status.
 
+- **Driver login** (`/driver`): drivers enter their driver code (or paste
+  their link) and stay signed in on that phone until they log out. Each
+  assigned shipment shows its **Pickup** and **Drop-off** addresses, the next
+  stop highlighted, with **Google Maps** and **Waze** buttons that open
+  turn-by-turn navigation. Deactivated drivers can't log in.
 - **Customer portal** (`/portal`): staff create customer accounts at
   `/admin/customers` (temporary password shown once). Customers log in, see
   their shipments, and request new orders, which staff approve or decline at

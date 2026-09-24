@@ -15,6 +15,12 @@ export default function HomePage() {
               Customer login
             </Link>
             <Link
+              href="/driver"
+              className="text-slate-500 hover:text-slate-900"
+            >
+              Driver login
+            </Link>
+            <Link
               href="/admin"
               className="text-slate-500 hover:text-slate-900"
             >

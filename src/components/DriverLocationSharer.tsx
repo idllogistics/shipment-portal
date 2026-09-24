@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { STATUS_LABELS } from "@/lib/tracking";
 import { formatTime } from "@/lib/format";
 import DriverCheckpointForm from "./DriverCheckpointForm";
+import DriverStop from "./DriverStop";
 
 type Shipment = {
   id: string;
@@ -217,10 +218,20 @@ export default function DriverLocationSharer({
                     {STATUS_LABELS[s.status] ?? s.status}
                   </span>
                 </div>
-                <p className="mt-1 text-slate-500">
-                  {s.customerName}
-                  {s.destination ? ` · ${s.destination}` : ""}
-                </p>
+                <p className="mt-1 text-slate-500">{s.customerName}</p>
+
+                <div className="mt-3 space-y-2">
+                  <DriverStop
+                    label="Pickup"
+                    address={s.origin}
+                    isNext={s.nextCheckpoint === "PICKUP"}
+                  />
+                  <DriverStop
+                    label="Drop-off"
+                    address={s.destination}
+                    isNext={s.nextCheckpoint === "DELIVERY"}
+                  />
+                </div>
 
                 {s.nextCheckpoint && activeCheckpointShipmentId !== s.id && (
                   <button

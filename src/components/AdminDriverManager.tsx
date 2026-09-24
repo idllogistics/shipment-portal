@@ -103,7 +103,11 @@ export default function AdminDriverManager({
         <p className="mt-1 text-sm text-slate-500">
           Send this link to {driver.name} (e.g. via WhatsApp or SMS). They
           open it on their phone and tap &ldquo;Start sharing location&rdquo;
-          while on a delivery run — no app install needed.
+          while on a delivery run — no app install needed. Or they can sign in
+          at <span className="font-mono">/driver</span> with their code:{" "}
+          <span className="font-mono text-slate-700">{driver.accessCode}</span>.
+          They&rsquo;ll see each shipment&rsquo;s pickup and drop-off with
+          Google Maps and Waze buttons.
         </p>
         <div className="mt-3 flex gap-2">
           <input
