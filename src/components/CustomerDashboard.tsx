@@ -12,6 +12,11 @@ type Shipment = {
   destination: string | null;
   status: string;
   cancelReason: string | null;
+  cancellationRequests: {
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    reason: string;
+    rejectReason: string | null;
+  }[];
   createdAt: string;
   updatedAt: string;
 };
@@ -78,7 +83,7 @@ export default function CustomerDashboard() {
       const url =
         target.kind === "request"
           ? `/api/customer/orders/${target.id}/cancel`
-          : `/api/customer/shipments/${target.id}/cancel`;
+          : `/api/customer/shipments/${target.id}/cancellation-request`;
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -99,9 +104,13 @@ export default function CustomerDashboard() {
             s.id === target.id
               ? {
                   ...s,
-                  status: data.shipment.status,
-                  cancelReason: data.shipment.cancelReason,
-                  updatedAt: data.shipment.updatedAt,
+                  cancellationRequests: [
+                    {
+                      status: "PENDING",
+                      reason: data.cancellationRequest.reason,
+                      rejectReason: null,
+                    },
+                  ],
                 }
               : s
           )
@@ -175,19 +184,33 @@ export default function CustomerDashboard() {
                     {s.status === "CANCELLED" && s.cancelReason && (
                       <p className="mt-1 text-xs text-slate-500">Reason: {s.cancelReason}</p>
                     )}
+                    {s.status !== "CANCELLED" &&
+                      s.cancellationRequests[0]?.status === "REJECTED" && (
+                        <p className="mt-1 text-xs text-red-600">
+                          Cancellation declined
+                          {s.cancellationRequests[0].rejectReason
+                            ? ": " + s.cancellationRequests[0].rejectReason
+                            : ""}
+                        </p>
+                      )}
                   </td>
                   <td className="px-4 py-3 text-slate-500">{formatDateTime(s.updatedAt)}</td>
                   <td className="px-4 py-3 text-right">
-                    {s.status === "PENDING" && (
-                      <button
-                        onClick={() =>
-                          openCancel({ kind: "shipment", id: s.id, label: s.trackingNumber })
-                        }
-                        className="text-xs text-red-600 hover:underline"
-                      >
-                        Cancel
-                      </button>
-                    )}
+                    {s.status !== "CANCELLED" && s.status !== "DELIVERED" &&
+                      (s.cancellationRequests[0]?.status === "PENDING" ? (
+                        <span className="text-xs text-amber-700">
+                          Cancellation awaiting review
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            openCancel({ kind: "shipment", id: s.id, label: s.trackingNumber })
+                          }
+                          className="text-xs text-red-600 hover:underline"
+                        >
+                          Request cancellation
+                        </button>
+                      ))}
                   </td>
                 </tr>
               ))}
@@ -264,9 +287,15 @@ export default function CustomerDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
             <h2 className="text-lg font-semibold">
-              Cancel {target.kind === "request" ? "request" : "shipment"}
+              {target.kind === "request" ? "Cancel request" : "Request cancellation"}
             </h2>
             <p className="mt-1 text-sm text-slate-500">{target.label}</p>
+            {target.kind === "shipment" && (
+              <p className="mt-2 text-sm text-slate-600">
+                This order has been accepted, so our team needs to approve the
+                cancellation. Your shipment continues until they do.
+              </p>
+            )}
             <label className="mt-4 block">
               <span className="mb-1 block text-sm font-medium text-slate-700">
                 Reason <span className="text-red-500">*</span>
@@ -292,7 +321,11 @@ export default function CustomerDashboard() {
                 disabled={cancelling}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
-                {cancelling ? "Cancelling…" : "Confirm cancel"}
+                {cancelling
+                  ? "Sending…"
+                  : target.kind === "shipment"
+                  ? "Send request"
+                  : "Confirm cancel"}
               </button>
             </div>
           </div>

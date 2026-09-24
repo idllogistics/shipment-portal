@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { isAdminAuthed } from "@/lib/auth";
 import LogoutButton from "@/components/LogoutButton";
+import { prisma } from "@/lib/prisma";
 
 export default async function AdminDashboardLayout({
   children,
@@ -12,6 +13,10 @@ export default async function AdminDashboardLayout({
   if (!authed) {
     redirect("/admin/login");
   }
+
+  const pendingCancellations = await prisma.cancellationRequest.count({
+    where: { status: "PENDING" },
+  });
 
   return (
     <div className="flex flex-1 flex-col">
@@ -41,6 +46,17 @@ export default async function AdminDashboardLayout({
               className="text-slate-500 hover:text-slate-900"
             >
               Order requests
+            </Link>
+            <Link
+              href="/admin/cancellations"
+              className="text-slate-500 hover:text-slate-900"
+            >
+              Cancellations
+              {pendingCancellations > 0 && (
+                <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+                  {pendingCancellations}
+                </span>
+              )}
             </Link>
             <Link href="/" className="text-slate-500 hover:text-slate-900">
               View site

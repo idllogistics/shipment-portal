@@ -69,6 +69,7 @@ type Shipment = {
   notes: string | null;
   cancelReason: string | null;
   cancelledBy: "CUSTOMER" | "ADMIN" | null;
+  cancellationRequests?: { reason: string; createdAt: string }[];
   itemDescription: string | null;
   itemQuantity: string | null;
   declaredValue: number | null;
@@ -363,6 +364,16 @@ export default function AdminShipmentManager({
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      {shipment.status !== "CANCELLED" && (shipment.cancellationRequests?.length ?? 0) > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="font-semibold">The customer has asked to cancel this order</p>
+          <p className="mt-1">Reason: {shipment.cancellationRequests?.[0].reason}</p>
+          <Link href="/admin/cancellations" className="mt-2 inline-block font-medium underline">
+            Review the request →
+          </Link>
         </div>
       )}
 

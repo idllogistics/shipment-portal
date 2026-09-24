@@ -39,6 +39,12 @@ enum OrderRequestStatus {
   CANCELLED
 }
 
+enum CancellationRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum CancelledBy {
   CUSTOMER
   ADMIN
@@ -65,6 +71,7 @@ model Shipment {
   customerId     String?
   customer       Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
   orderRequest   OrderRequest?
+  cancellationRequests CancellationRequest[]
 
   cancelReason   String?
   cancelledBy    CancelledBy?
@@ -88,6 +95,7 @@ model Customer {
   createdAt    DateTime @default(now())
   shipments      Shipment[]
   orderRequests  OrderRequest[]
+  cancellationRequests CancellationRequest[]
   passwordResetRequests PasswordResetRequest[]
   passwordResetTokens   PasswordResetToken[]
 }
@@ -192,4 +200,19 @@ model PasswordResetToken {
   expiresAt  DateTime
   usedAt     DateTime?
   createdAt  DateTime  @default(now())
+}
+
+// A customer asking to cancel an already-accepted order. Staff approve
+// (which cancels the shipment) or reject (with a reason the customer sees).
+model CancellationRequest {
+  id           String                    @id @default(cuid())
+  shipmentId   String
+  shipment     Shipment                  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  customerId   String
+  customer     Customer                  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  reason       String
+  status       CancellationRequestStatus @default(PENDING)
+  rejectReason String?
+  createdAt    DateTime                  @default(now())
+  reviewedAt   DateTime?
 }

@@ -103,10 +103,14 @@ auto-fill the item description, quantity, and declared value.
   their shipments, and request new orders, which staff approve or decline at
   `/admin/orders`.
 - **Cancelling & rejecting** — a reason is always required and is shown to
-  the other side. Staff *decline* pending requests and can *cancel* any
-  shipment that isn't delivered (from its admin page). Customers can cancel a
-  request still awaiting review, or a shipment that hasn't been picked up
-  yet; after pickup they contact staff. Cancelled shipments show a banner
+  the other side. Staff *decline* pending order requests and can *cancel* any
+  shipment that isn't delivered (from its admin page). Customers can cancel
+  an order request still awaiting review straight away, but once an order is
+  accepted they can only *request* cancellation (any time before delivery):
+  it appears under **Cancellations** in the admin portal (with a count badge
+  in the nav), where staff approve it (the shipment is cancelled) or reject
+  it with a reason the customer sees. Cancelling a shipment directly also
+  closes any open request for it. Cancelled shipments show a banner
   and the reason on the tracking page. Choosing a new status on a cancelled
   shipment reinstates it.
 - **Forgot / change password** — customers use "Forgot password?" on the

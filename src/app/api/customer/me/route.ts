@@ -17,6 +17,11 @@ export async function GET() {
         destination: true,
         status: true,
         cancelReason: true,
+        cancellationRequests: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { status: true, reason: true, rejectReason: true },
+        },
         createdAt: true,
         updatedAt: true,
       },

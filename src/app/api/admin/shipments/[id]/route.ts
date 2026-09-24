@@ -17,6 +17,7 @@ export async function GET(
       photos: { where: { checkpointId: null }, orderBy: { createdAt: "desc" } },
       events: { orderBy: { createdAt: "desc" } },
       driver: true,
+      cancellationRequests: { where: { status: "PENDING" }, select: { reason: true, createdAt: true } },
       documents: { orderBy: { createdAt: "desc" } },
       checkpoints: {
         orderBy: { createdAt: "desc" },
@@ -129,6 +130,7 @@ export async function PATCH(
       photos: { where: { checkpointId: null }, orderBy: { createdAt: "desc" } },
       events: { orderBy: { createdAt: "desc" } },
       driver: true,
+      cancellationRequests: { where: { status: "PENDING" }, select: { reason: true, createdAt: true } },
       documents: { orderBy: { createdAt: "desc" } },
       checkpoints: {
         orderBy: { createdAt: "desc" },
