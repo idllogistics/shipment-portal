@@ -113,7 +113,7 @@ export default function AdminCustomerManager({
     if (!tempPassword) return;
     navigator.clipboard
       .writeText(
-        `ShipTrack customer portal: ${window.location.origin}/portal/login\nEmail: ${customer.email}\nPassword: ${tempPassword}`
+        `Harmony ShipTrack customer portal: ${window.location.origin}/portal/login\nEmail: ${customer.email}\nPassword: ${tempPassword}`
       )
       .then(() => {
         setCopied(true);

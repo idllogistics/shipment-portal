@@ -6,7 +6,7 @@ export default function DriverLoginPage() {
     <div className="flex flex-1 flex-col">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-md items-center justify-between px-6 py-4">
-          <span className="text-lg font-semibold tracking-tight">ShipTrack · Driver</span>
+          <span className="text-lg font-semibold tracking-tight">Harmony ShipTrack · Driver</span>
           <Link href="/" className="text-sm text-slate-500 hover:text-slate-900">
             Home
           </Link>

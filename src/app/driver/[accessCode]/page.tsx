@@ -13,7 +13,7 @@ export default async function DriverPage({
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-md items-center justify-between px-6 py-4">
           <span className="text-lg font-semibold tracking-tight">
-            ShipTrack · Driver
+            Harmony ShipTrack · Driver
           </span>
           <DriverLogoutButton />
         </div>

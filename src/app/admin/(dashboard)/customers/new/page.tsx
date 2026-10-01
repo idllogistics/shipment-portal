@@ -40,7 +40,7 @@ export default function NewCustomerPage() {
     if (!created) return;
     navigator.clipboard
       .writeText(
-        `ShipTrack customer portal: ${
+        `Harmony ShipTrack customer portal: ${
           typeof window !== "undefined" ? window.location.origin : ""
         }/portal/login\nEmail: ${created.email}\nPassword: ${created.tempPassword}`
       )

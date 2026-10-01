@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ShipTrack — Live Shipment Tracking",
-  description: "Track your shipment with live photo updates.",
+  title: "Harmony ShipTrack — Live Shipment Tracking",
+  description: "Harmony Freight DWC — track your shipment with live photo updates.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
